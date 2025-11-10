@@ -1,0 +1,9 @@
+```python
+exec('os\x2esystem("id")')  # usando unicode escapes
+__import__('os').system('\x74ouch /tmp/pyfuzz')
+exec('\u006f\u0073.system("whoami")')
+import os
+os.system(chr(105)+chr(100)) # id via chr
+payload = "os.system('id')"
+eval(payload.replace("os", "o"+"s"))
+```
