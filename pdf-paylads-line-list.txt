@@ -1,0 +1,70 @@
+## Example 1 – PDF con JavaScript en /OpenAction
+%PDF-1.3
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /OpenAction << /S /JavaScript /JS (app.alert("You've been hacked!") ); >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 0 >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000200 00000 n 
+trailer << /Root 1 0 R /Size 3 >>
+startxref
+300
+%%EOF
+
+## Example 2 – PDF con archivo embebido + acción Launch
+%PDF-1.4
+2 0 obj
+<< /Filter /FlateDecode /Length 128 >>
+stream
+... (datos comprimidos) ...
+endstream
+endobj
+3 0 obj
+<< /Names << /EmbeddedFiles << /F (evil.exe) /EF << /F 4 0 R >> >> >> >>
+endobj
+4 0 obj
+<< /Length 512 >> stream
+... (binar-exe) ...
+endstream
+endobj
+5 0 obj
+<< /Type /Catalog /OpenAction << /S /Launch /F (evil.exe) >> >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000100 00000 n 
+0000000200 00000 n 
+0000000400 00000 n 
+trailer << /Root 5 0 R /Size 6 >>
+startxref
+500
+%%EOF
+
+## Example 3 – PDF con anotación que lanza URI maliciosa al hacer click
+%PDF-1.5
+4 0 obj
+<< /Type /Annot /Subtype /Link /Rect [100 100 200 150] /Border [0 0 0] /A << /S /URI /URI (http://malicious.example/phish.html) >> >>
+endobj
+5 0 obj
+<< /Type /Catalog /Pages 6 0 R /OpenAction 7 0 R >>
+endobj
+6 0 obj
+<< /Type /Pages /Count 0 >>
+endobj
+7 0 obj
+<< /Kids [4 0 R] >>
+endobj
+xref
+0 8
+... 
+trailer << /Root 5 0 R /Size 8 >>
+startxref
+600
+%%EOF
